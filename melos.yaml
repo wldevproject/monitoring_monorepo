@@ -1,0 +1,75 @@
+# File: my_flutter_monorepo/melos.yaml
+
+name: monitoring_monorepo # Nama workspace/monorepo Anda
+
+packages: # Daftar path ke paket/proyek yang dikelola Melos
+  - packages/** # Mencakup semua paket di dalam direktori 'packages/' (seperti shared_core)
+  - monitoring_kimia    # Sub-proyek aplikasi pertama
+  - monitoring_cuaca    # Sub-proyek aplikasi kedua
+  # Tambahkan sub-proyek lain di sini jika sudah dibuat
+
+# Opsi perintah bawaan Melos
+command:
+  bootstrap:
+    runPubGetInParallel: true # Menjalankan pub get secara paralel untuk percepatan
+
+  version:
+    message: "chore(release): publish packages" # Pesan commit kustom saat versioning
+
+# Skrip kustom yang bisa Anda jalankan dengan 'melos run <nama_skrip>'
+scripts:
+  # Mendapatkan semua dependensi untuk semua paket/proyek
+  get_all:
+    description: "Menjalankan 'fvm flutter pub get' di semua paket yang relevan."
+    # Kita asumsikan semua paket yang perlu pub get adalah paket Flutter atau kompatibel.
+    # FVM akan menggunakan versi Flutter yang benar per proyek.
+    run: melos exec --concurrency=1 -- "fvm flutter pub get"
+  
+  # Membersihkan semua proyek Flutter
+  clean_all:
+    description: "Menjalankan 'fvm flutter clean' di semua paket Flutter."
+    run: melos exec -- "fvm flutter clean"
+
+  # Menganalisis kode di semua paket
+  analyze_all:
+    description: "Menjalankan analisis statis di semua paket Flutter."
+    run: melos exec -- "fvm flutter analyze"
+
+  # Menjalankan tes di semua paket (dengan fail-fast)
+  test_all:
+    description: "Menjalankan semua tes di paket Flutter. Mungkin error jika paket tidak punya direktori 'test'."
+    # Perintah 'fvm flutter test' akan dijalankan di setiap paket.
+    # Jika sebuah paket tidak memiliki direktori 'test', perintah ini mungkin akan
+    # menghasilkan error atau peringatan untuk paket tersebut, yang akan menghentikan
+    # keseluruhan skrip karena ada '--fail-fast'.
+    # Anda bisa menggunakan filter Melos (--scope) jika ingin menjalankan tes hanya pada paket tertentu.
+    run: melos exec --fail-fast --no-select -- "fvm flutter test"
+
+  # --- Skrip untuk Menjalankan Sub-Proyek Aplikasi ---
+  # Skrip ini seharusnya sudah cross-platform karena 'cd' dan '&&' umumnya bekerja di Windows juga.
+  run:monitoring_cuaca:
+    description: "Menjalankan aplikasi monitoring_cuaca (Flutter 3.32.1)."
+    run: |
+      echo "Menjalankan monitoring_cuaca..."
+      cd monitoring_cuaca && fvm flutter run
+
+  run:monitoring_kimia:
+    description: "Menjalankan aplikasi monitoring_kimia (Flutter 3.27.4)."
+    run: |
+      echo "Menjalankan monitoring_kimia..."
+      cd monitoring_kimia && fvm flutter run
+
+  # --- Skrip Utilitas Lainnya ---
+  # 'dart format .' juga cross-platform.
+  format_all:
+    description: "Memformat semua file Dart di semua paket."
+    run: melos exec -- "dart format ."
+
+# Contoh skrip yang menggunakan filter, jika Anda hanya ingin menjalankan sesuatu
+# pada paket 'shared_core' misalnya:
+#  analyze:shared_core:
+#    description: "Menganalisis kode hanya untuk paket shared_core."
+#    # Jalankan ini dengan: melos run analyze:shared_core
+#    # Atau jika ingin menggunakan filter langsung dari command line:
+#    # melos exec --scope="shared_core" -- "dart analyze"
+#    run: melos exec --scope="shared_core" -- "dart analyze"
