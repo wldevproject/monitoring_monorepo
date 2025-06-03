@@ -339,7 +339,7 @@ class HomeView extends GetView<HomeController> {
           Icon(
             iconData,
             color: value ? activeColor : Colors.grey,
-            size: 28, // Ukuran ikon bisa disesuaikan
+            size: 28,
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -408,7 +408,6 @@ class _AnimatedStatusCardState extends State<AnimatedStatusCard>
       end: _isDanger ? Colors.red.shade300 : Colors.green.shade50,
     ).animate(
       CurvedAnimation(
-        // Tambahkan curve untuk animasi yang lebih halus
         parent: _animationController,
         curve: Curves.easeInOut,
       ),
@@ -418,30 +417,20 @@ class _AnimatedStatusCardState extends State<AnimatedStatusCard>
   @override
   void didUpdateWidget(AnimatedStatusCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Cek apakah kondisi berubah
     if (widget.data.kondisi != oldWidget.data.kondisi) {
       setState(() {
-        // Perlu setState untuk memicu rebuild jika _isDanger mempengaruhi UI lain (meskipun di sini tidak secara langsung)
         _isDanger = widget.data.kondisi == 1;
       });
-      _setupAnimation(); // Setup ulang animasi dengan status bahaya yang baru
-
+      _setupAnimation();
       if (_isDanger) {
         if (!_animationController.isAnimating) {
-          // Hanya repeat jika belum animating
           _animationController.repeat(reverse: true);
         }
       } else {
         _animationController.stop();
-        // Anda mungkin ingin mengembalikan ke warna non-danger secara eksplisit
-        // atau biarkan AnimatedBuilder yang menangani dari _colorAnimation.value
-        // Untuk memastikan warna kembali ke normal saat tidak danger:
-        _animationController.animateTo(0,
-            duration: Duration.zero); // Langsung ke warna begin (normal)
+        _animationController.animateTo(0, duration: Duration.zero);
       }
     }
-    // Jika hanya nilai yang berubah tapi kondisi tetap sama, tidak perlu setup ulang animasi warna.
-    // Namun, widget akan tetap di-rebuild oleh AnimatedBuilder karena _colorAnimation adalah listenable.
   }
 
   @override
@@ -452,16 +441,12 @@ class _AnimatedStatusCardState extends State<AnimatedStatusCard>
 
   String _formatNumber(dynamic value) {
     if (value == null) return 'N/A';
-    // Coba parse sebagai double, jika gagal, kembalikan sebagai string
     final double? doubleVal = double.tryParse(value.toString());
     if (doubleVal == null) return value.toString();
 
-    // Format angka desimal
     if (doubleVal == doubleVal.truncateToDouble()) {
-      // Jika tidak ada desimal (angka bulat)
       return doubleVal.toStringAsFixed(0);
     } else {
-      // Cek apakah desimalnya .0 atau .00
       String formatted = doubleVal.toStringAsFixed(2);
       if (formatted.endsWith('.00')) {
         return doubleVal.toStringAsFixed(0);

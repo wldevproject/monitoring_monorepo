@@ -54,7 +54,7 @@ class HomeController extends GetxController {
       if (kDebugMode) {
         print('socket.on: Raw data from controlingakuarium: $data');
       }
-      // _processSocketData(data);
+      _processTombolAkuariumStatus(data);
     });
 
     _apiService.socket.onConnectError((err) {
@@ -108,6 +108,48 @@ class HomeController extends GetxController {
     }
   }
 
+  void _processTombolAkuariumStatus(dynamic rawData) {
+    try {
+      Map<String, dynamic> statusMap;
+
+      if (rawData is String) {
+        final decoded = jsonDecode(rawData);
+        if (decoded is Map<String, dynamic>) {
+          statusMap = decoded;
+        } else {
+          if (kDebugMode) {
+            print(
+                'HomeController: Expected a JSON object for status, but got: ${decoded.runtimeType}');
+          }
+          return;
+        }
+      } else if (rawData is Map<String, dynamic>) {
+        statusMap = rawData;
+      } else {
+        if (kDebugMode) {
+          print(
+              'HomeController: Unknown status data type from socket: ${rawData.runtimeType}');
+        }
+        return;
+      }
+
+      final dataStatus = StatusData.fromJson(statusMap);
+      _isiAirActive.value = dataStatus.isiAir ?? false;
+      _kurasAirActive.value = dataStatus.kurasAir ?? false;
+
+      if (kDebugMode) {
+        print(
+            'HomeController: Tombol akuarium status updated - Isi Air: ${_isiAirActive.value}, Kuras Air: ${_kurasAirActive.value}');
+      }
+      update();
+    } catch (e) {
+      if (kDebugMode) {
+        print('HomeController: Error processing tombol akuarium status: $e');
+        print('HomeController: Received raw status data: $rawData');
+      }
+    }
+  }
+
   void reconnectSocket() {
     if (!isConnected.value) {
       if (kDebugMode) {
@@ -132,13 +174,13 @@ class HomeController extends GetxController {
       }
       _apiService.socket.emit('tombol-akuarium', dataMap);
 
-      Get.snackbar(
-        "Sukses",
-        "Data tombol akuarium dikirim: ${jsonEncode(dataMap)}",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
+      // Get.snackbar(
+      //   "Sukses",
+      //   "Data tombol akuarium dikirim",
+      //   snackPosition: SnackPosition.BOTTOM,
+      //   backgroundColor: Colors.green,
+      //   colorText: Colors.white,
+      // );
     } else {
       if (kDebugMode) {
         print('HomeController: Cannot emit. Socket is not connected.');

@@ -25,3 +25,23 @@ class SensorData {
         'kondisi': kondisi,
       };
 }
+
+class StatusData {
+  final bool? isiAir;
+  final bool? kurasAir;
+
+  StatusData({
+    this.isiAir,
+    this.kurasAir,
+  });
+
+  factory StatusData.fromJson(Map<String, dynamic> json) => StatusData(
+        isiAir: json['isiAir'] as bool,
+        kurasAir: json['kurasAir'] as bool,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'isiAir': isiAir,
+        'kurasAir': kurasAir,
+      };
+}
