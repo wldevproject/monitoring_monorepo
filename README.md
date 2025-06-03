@@ -11,13 +11,12 @@ Repositori ini menggunakan FVM untuk manajemen versi Flutter per proyek dan Melo
     *Pastikan `$HOME/.pub-cache/bin` (atau path Windows yang sesuai) ada di PATH sistem Anda.*
 
 ## 📁 Struktur Utama
-
-monitoring_monorepo/
-├── packages/shared_core/   # Kode bersama (tema, API client, dll.)
-├── monitoring_cuaca/       # Sub-proyek aplikasi 1
-├── monitoring_kimia/       # Sub-proyek aplikasi 2
-├── melos.yaml              # Konfigurasi Melos
-└── pubspec.yaml            # Pubspec untuk root workspace (untuk Melos v3+)
+    .monitoring_monorepo/
+    ├── packages/shared_core/   # Kode bersama (tema, API client, dll.)
+    ├── monitoring_cuaca/       # Sub-proyek aplikasi 1
+    ├── monitoring_kimia/       # Sub-proyek aplikasi 2
+    ├── melos.yaml              # Konfigurasi Melos
+    ├── pubspec.yaml            # Pubspec untuk root workspace (untuk Melos v3+)
 
 ## 🚀 Pengaturan Awal (Setelah Clone)
 
