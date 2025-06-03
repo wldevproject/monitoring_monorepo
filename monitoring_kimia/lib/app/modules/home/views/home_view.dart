@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -33,7 +34,9 @@ class HomeView extends GetView<HomeController> {
           if (!controller.isConnected.value) {
             controller.reconnectSocket();
           }
-          print('Pull to refresh triggered.');
+          if (kDebugMode) {
+            print('Pull to refresh triggered.');
+          }
         },
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -43,58 +46,44 @@ class HomeView extends GetView<HomeController> {
             final controllerCard = _buildControllerCard();
             final data = controller.eventData;
 
-            if (data.isEmpty) {
-              // Belum ada data
+            if (data.isEmpty && !controller.isConnected.value) {
               return _buildScrollWrapper(
                 context,
                 Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    connectionCard,
-                    const SizedBox(height: 20),
-                    controller.isConnected.value
-                        ? const Column(
-                            children: [
-                              CircularProgressIndicator(),
-                              SizedBox(height: 16),
-                              Text('Terhubung. Menunggu data dari server...',
-                                  textAlign: TextAlign.center),
-                            ],
-                          )
-                        : Column(
-                            children: [
-                              const Text(
-                                'Koneksi ke server terputus atau gagal.',
-                                textAlign: TextAlign.center,
-                                style:
-                                    TextStyle(fontSize: 16, color: Colors.red),
-                              ),
-                              const SizedBox(height: 20),
-                              _buildReconnectButton(),
-                            ],
-                          ),
-                  ],
-                ),
-              );
-            } else if (data.isEmpty) {
-              return _buildScrollWrapper(
-                context,
-                Column(
+                  spacing: 20,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     headerCard,
-                    Expanded(
-                      child: Column(
-                        children: [
-                          connectionCard,
-                          const SizedBox(height: 24),
-                          const Text(
-                            'Belum ada data sensor.',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ],
-                      ),
+                    connectionCard,
+                    const Text(
+                      'Koneksi ke server terputus atau gagal.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.red),
                     ),
+                    _buildReconnectButton(),
+                    controllerCard,
+                  ],
+                ),
+              );
+            } else if (data.isEmpty && controller.isConnected.value) {
+              return _buildScrollWrapper(
+                context,
+                Column(
+                  spacing: 20,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    headerCard,
+                    const SizedBox(height: 20),
+                    connectionCard,
+                    const SizedBox(height: 20),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Terhubung. Menunggu data dari server...',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    controllerCard,
                   ],
                 ),
               );
@@ -102,62 +91,62 @@ class HomeView extends GetView<HomeController> {
               return _buildScrollWrapper(
                 context,
                 Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     headerCard,
-                    Expanded(
-                      child: Column(
-                        children: [
-                          connectionCard,
-                          const SizedBox(height: 24),
-                          const Text(
-                            'Data sensor belum lengkap.',
-                            style:
-                                TextStyle(fontSize: 16, color: Colors.orange),
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 20),
+                    connectionCard,
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Data sensor belum lengkap. Menunggu data...',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.orange),
                     ),
+                    const SizedBox(height: 20),
+                    controllerCard,
+                    if (!controller.isConnected.value) _buildReconnectButton(),
                   ],
                 ),
               );
             } else {
-              return Column(
-                children: [
-                  headerCard,
-                  Column(
-                    children: [
-                      connectionCard,
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                              child: AnimatedStatusCard(
-                                  label: 'Suhu Air (°C)', data: data[0])),
-                          const SizedBox(width: 8),
-                          Expanded(
-                              child: AnimatedStatusCard(
-                                  label: 'pH Air (ppm)', data: data[1])),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                              child: AnimatedStatusCard(
-                                  label: 'Kekeruhan Air (ntu)', data: data[2])),
-                          const SizedBox(width: 8),
-                          Expanded(
-                              child: AnimatedStatusCard(
-                                  label: 'Amonia (mg/L)', data: data[3])),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                  ),
-                  controllerCard,
-                  if (!controller.isConnected.value) _buildReconnectButton(),
-                ],
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    headerCard,
+                    const SizedBox(height: 12),
+                    connectionCard,
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                            child: AnimatedStatusCard(
+                                label: 'Suhu Air (°C)', data: data[0])),
+                        const SizedBox(width: 8),
+                        Expanded(
+                            child: AnimatedStatusCard(
+                                label: 'pH Air', data: data[1])),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                            child: AnimatedStatusCard(
+                                label: 'Kekeruhan (NTU)', data: data[2])),
+                        const SizedBox(width: 8),
+                        Expanded(
+                            child: AnimatedStatusCard(
+                                label: 'Amonia (ppm)', data: data[3])),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    controllerCard,
+                    const SizedBox(height: 16),
+                    if (!controller.isConnected.value) _buildReconnectButton(),
+                  ],
+                ),
               );
             }
           }),
@@ -172,7 +161,11 @@ class HomeView extends GetView<HomeController> {
         physics: const AlwaysScrollableScrollPhysics(),
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Center(child: child),
+          child: Center(
+              child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: child,
+          )),
         ),
       );
     });
@@ -182,7 +175,7 @@ class HomeView extends GetView<HomeController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Text(
               "Selamat Datang",
@@ -194,8 +187,8 @@ class HomeView extends GetView<HomeController> {
             ),
           ],
         ),
-        Text(
-          "REALTIME MONITORING",
+        const Text(
+          "MONITORING AKUARIUM",
           style: TextStyle(
             fontSize: 30,
             fontWeight: FontWeight.w400,
@@ -203,8 +196,8 @@ class HomeView extends GetView<HomeController> {
           ),
         ),
         const SizedBox(height: 12),
-        Text(
-          "Smart Devices Monitoring",
+        const Text(
+          "Status Monitoring Akuarium",
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.normal,
@@ -217,101 +210,157 @@ class HomeView extends GetView<HomeController> {
   }
 
   Widget _buildControllerCard() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "CONTROLLER DEVICE",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 0.5,
-          ),
-        ),
-        Row(
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "Control your Device",
+            const Text(
+              "KONTROL PERANGKAT",
               style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.normal,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
               ),
             ),
+            const SizedBox(height: 4),
+            const Text(
+              "Aktifkan atau nonaktifkan fitur akuarium Anda.",
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.black54,
+              ),
+            ),
+            Obx(
+              () => _buildToggleRow(
+                title: 'Isi Air',
+                subtitle: controller.isiAirActive
+                    ? 'Sedang Mengisi Air'
+                    : 'Pengisian Air Mati',
+                value: controller.isiAirActive,
+                onChanged: (bool newValue) {
+                  controller.setIsiAir(newValue);
+                },
+                activeColor: Colors.blue.shade600,
+                iconData: controller.isiAirActive
+                    ? Icons.water_drop_rounded
+                    : Icons.water_drop_outlined,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Obx(() => _buildToggleRow(
+                  title: 'Kuras Air',
+                  subtitle: controller.kurasAirActive
+                      ? 'Sedang Menguras Air'
+                      : 'Pengurasan Air Mati',
+                  value: controller.kurasAirActive,
+                  onChanged: (bool newValue) {
+                    controller.setKurasAir(newValue);
+                  },
+                  activeColor: Colors.teal.shade600,
+                  iconData: controller.kurasAirActive
+                      ? Icons.waves_rounded
+                      : Icons.waves_outlined,
+                )),
           ],
         ),
-        const SizedBox(height: 12),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.settings_remote_rounded), // Contoh ikon
-          label: const Text('Kirim Status Akuarium (0,0)'),
-          onPressed: () {
-            controller.sendTombolAkuariumState();
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange.shade700,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            textStyle:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildConnectionStatusCard() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Card(
-          elevation: 2,
-          color: controller.isConnected.value
-              ? Colors.green.shade50
-              : Colors.red.shade50,
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  controller.isConnected.value
-                      ? Icons.check_circle_outline_rounded
-                      : Icons.highlight_off_rounded,
-                  color: controller.isConnected.value
-                      ? Colors.green.shade700
-                      : Colors.red.shade700,
-                  size: 20, // lebih kecil dari sebelumnya (28)
-                ),
-                const SizedBox(
-                    width: 8), // jarak antar icon dan teks dikecilkan
-                Text(
-                  controller.isConnected.value ? 'TERHUBUNG' : 'TERPUTUS',
-                  style: TextStyle(
-                    fontSize: 13, // sebelumnya 16
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
-                    color: controller.isConnected.value
-                        ? Colors.green.shade800
-                        : Colors.red.shade800,
-                  ),
-                ),
-              ],
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      color: controller.isConnected.value
+          ? Colors.green.shade50
+          : Colors.red.shade50,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              controller.isConnected.value
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.highlight_off_rounded,
+              color: controller.isConnected.value
+                  ? Colors.green.shade700
+                  : Colors.red.shade700,
+              size: 20,
             ),
-          ),
+            const SizedBox(width: 8),
+            Text(
+              controller.isConnected.value ? 'TERHUBUNG' : 'TERPUTUS',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
+                color: controller.isConnected.value
+                    ? Colors.green.shade800
+                    : Colors.red.shade800,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildReconnectButton() {
-    return ElevatedButton.icon(
-      icon: const Icon(Icons.refresh_rounded),
-      label: const Text('Hubungkan Ulang'),
-      onPressed: controller.reconnectSocket,
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.refresh_rounded),
+        label: const Text('Hubungkan Ulang'),
+        onPressed: controller.reconnectSocket,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToggleRow({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required Color activeColor,
+    required IconData iconData,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(
+            iconData,
+            color: value ? activeColor : Colors.grey,
+            size: 28, // Ukuran ikon bisa disesuaikan
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 16)),
+                Text(subtitle,
+                    style:
+                        TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: activeColor,
+          ),
+        ],
       ),
     );
   }
@@ -330,52 +379,97 @@ class AnimatedStatusCard extends StatefulWidget {
 
 class _AnimatedStatusCardState extends State<AnimatedStatusCard>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  late AnimationController _animationController;
   late Animation<Color?> _colorAnimation;
+  late bool _isDanger;
 
   @override
   void initState() {
     super.initState();
+    _isDanger = widget.data.kondisi == 1;
 
-    bool isDanger = widget.data.kondisi.toString() == '1';
-
-    _controller = AnimationController(
+    _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1),
+      duration: const Duration(milliseconds: 700),
     );
 
-    _colorAnimation = ColorTween(
-      begin: isDanger ? Colors.red.shade50 : Colors.green.shade50,
-      end: isDanger ? Colors.red.shade100 : Colors.green.shade100,
-    ).animate(_controller);
+    _setupAnimation();
 
-    if (isDanger) {
-      _controller.repeat(reverse: true);
+    if (_isDanger) {
+      _animationController.repeat(reverse: true);
     }
+  }
+
+  void _setupAnimation() {
+    _animationController.stop();
+
+    _colorAnimation = ColorTween(
+      begin: _isDanger ? Colors.red.shade100 : Colors.green.shade100,
+      end: _isDanger ? Colors.red.shade300 : Colors.green.shade50,
+    ).animate(
+      CurvedAnimation(
+        // Tambahkan curve untuk animasi yang lebih halus
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+  }
+
+  @override
+  void didUpdateWidget(AnimatedStatusCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Cek apakah kondisi berubah
+    if (widget.data.kondisi != oldWidget.data.kondisi) {
+      setState(() {
+        // Perlu setState untuk memicu rebuild jika _isDanger mempengaruhi UI lain (meskipun di sini tidak secara langsung)
+        _isDanger = widget.data.kondisi == 1;
+      });
+      _setupAnimation(); // Setup ulang animasi dengan status bahaya yang baru
+
+      if (_isDanger) {
+        if (!_animationController.isAnimating) {
+          // Hanya repeat jika belum animating
+          _animationController.repeat(reverse: true);
+        }
+      } else {
+        _animationController.stop();
+        // Anda mungkin ingin mengembalikan ke warna non-danger secara eksplisit
+        // atau biarkan AnimatedBuilder yang menangani dari _colorAnimation.value
+        // Untuk memastikan warna kembali ke normal saat tidak danger:
+        _animationController.animateTo(0,
+            duration: Duration.zero); // Langsung ke warna begin (normal)
+      }
+    }
+    // Jika hanya nilai yang berubah tapi kondisi tetap sama, tidak perlu setup ulang animasi warna.
+    // Namun, widget akan tetap di-rebuild oleh AnimatedBuilder karena _colorAnimation adalah listenable.
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   String _formatNumber(dynamic value) {
     if (value == null) return 'N/A';
-
-    final doubleVal = double.tryParse(value.toString());
+    // Coba parse sebagai double, jika gagal, kembalikan sebagai string
+    final double? doubleVal = double.tryParse(value.toString());
     if (doubleVal == null) return value.toString();
 
-    if (doubleVal == doubleVal.roundToDouble()) {
+    // Format angka desimal
+    if (doubleVal == doubleVal.truncateToDouble()) {
+      // Jika tidak ada desimal (angka bulat)
       return doubleVal.toStringAsFixed(0);
+    } else {
+      // Cek apakah desimalnya .0 atau .00
+      String formatted = doubleVal.toStringAsFixed(2);
+      if (formatted.endsWith('.00')) {
+        return doubleVal.toStringAsFixed(0);
+      } else if (formatted.endsWith('0')) {
+        return doubleVal.toStringAsFixed(1);
+      }
+      return formatted;
     }
-
-    final str = doubleVal.toStringAsFixed(2);
-    if (str.endsWith('0')) {
-      return doubleVal.toStringAsFixed(1);
-    }
-
-    return str;
   }
 
   @override
@@ -383,41 +477,46 @@ class _AnimatedStatusCardState extends State<AnimatedStatusCard>
     IconData iconData;
     switch (widget.label.toLowerCase()) {
       case 'suhu air (°c)':
-        iconData = Icons.water;
+        iconData = Icons.thermostat_rounded;
         break;
-      case 'ph air (ppm)':
-        iconData = Icons.science;
+      case 'ph air':
+        iconData = Icons.science_outlined;
         break;
-      case 'kekeruhan air (ntu)':
-        iconData = Icons.blur_on;
+      case 'kekeruhan (ntu)':
+        iconData = Icons.opacity_rounded;
         break;
-      case 'amonia (mg/l)':
-        iconData = Icons.bubble_chart;
+      case 'amonia (ppm)':
+        iconData = Icons.bubble_chart_outlined;
         break;
       default:
-        iconData = Icons.device_thermostat;
+        iconData = Icons.sensors_rounded;
     }
 
     return AnimatedBuilder(
       animation: _colorAnimation,
       builder: (context, child) {
         return SizedBox(
-          height: 100,
+          height: 110,
           child: Card(
-            color: _colorAnimation.value,
-            elevation: 2,
-            margin: const EdgeInsets.all(4),
+            color: _isDanger ? _colorAnimation.value : Colors.green.shade50,
+            elevation: _isDanger ? 4 : 2,
+            margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: _isDanger
+                  ? BorderSide(color: Colors.red.shade700, width: 1.5)
+                  : BorderSide.none,
+            ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.all(12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Icon(
                     iconData,
-                    size: 36,
-                    color: widget.data.kondisi.toString() == '1'
-                        ? Colors.red.shade700
-                        : Colors.green.shade800,
+                    size: 32,
+                    color:
+                        _isDanger ? Colors.red.shade700 : Colors.green.shade700,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -428,20 +527,21 @@ class _AnimatedStatusCardState extends State<AnimatedStatusCard>
                         Text(
                           widget.label,
                           style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Text(_formatNumber(widget.data.nilai),
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: widget.data.kondisi.toString() == '1'
-                                  ? Colors.red.shade700
-                                  : Colors.green.shade800,
+                              color: _isDanger
+                                  ? Colors.red.shade900
+                                  : Colors.black,
                             )),
                       ],
                     ),

@@ -1,17 +1,24 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:monitoring_kimia/app/data/api.service.dart';
+import 'package:monitoring_kimia/app/data/api.service_impl.dart';
 import 'package:monitoring_kimia/app/data/response.model.dart';
 import 'package:socket_io_client/socket_io_client.dart';
 
 class HomeController extends GetxController {
   late final ApiService _apiService;
 
-  final Rx<List<SensorData>> _eventData = Rx<List<SensorData>>([]);
-  List<SensorData> get eventData => _eventData.value;
+  final _eventData = (List<SensorData>.of([])).obs;
+  List<SensorData> get eventData => _eventData;
 
   final RxBool isConnected = false.obs;
+
+  final _isiAirActive = false.obs;
+  bool get isiAirActive => _isiAirActive.value;
+
+  final _kurasAirActive = false.obs;
+  bool get kurasAirActive => _kurasAirActive.value;
 
   @override
   void onInit() {
@@ -23,27 +30,44 @@ class HomeController extends GetxController {
 
   void _setupSocketListeners() {
     _apiService.socket.on('connect', (_) {
-      print('HomeController: Connected to Socket.IO server');
+      if (kDebugMode) {
+        print('HomeController: Connected to Socket.IO server');
+      }
       isConnected.value = true;
     });
 
     _apiService.socket.on('disconnect', (_) {
-      print('HomeController: Disconnected from Socket.IO server');
+      if (kDebugMode) {
+        print('HomeController: Disconnected from Socket.IO server');
+      }
       isConnected.value = false;
     });
 
     _apiService.socket.on('monitoringsensorakuarium', (data) {
-      // print('HomeController: Raw data from monitoringsensorakuarium: $data');
+      if (kDebugMode) {
+        print('socket.on: Raw data from monitoringsensorakuarium: $data');
+      }
       _processSocketData(data);
     });
 
+    _apiService.socket.on('controlingakuarium', (data) {
+      if (kDebugMode) {
+        print('socket.on: Raw data from controlingakuarium: $data');
+      }
+      // _processSocketData(data);
+    });
+
     _apiService.socket.onConnectError((err) {
-      print('HomeController: Connection Error: $err');
+      if (kDebugMode) {
+        print('HomeController: Connection Error: $err');
+      }
       isConnected.value = false;
     });
 
     _apiService.socket.onError((err) {
-      print('HomeController: Socket Error: $err');
+      if (kDebugMode) {
+        print('HomeController: Socket Error: $err');
+      }
     });
   }
 
@@ -56,13 +80,17 @@ class HomeController extends GetxController {
         if (decoded is List) {
           jsonList = decoded;
         } else {
-          print('Expected a JSON array, but got: ${decoded.runtimeType}');
+          if (kDebugMode) {
+            print('Expected a JSON array, but got: ${decoded.runtimeType}');
+          }
           return;
         }
       } else if (rawData is List) {
         jsonList = rawData;
       } else {
-        print('Unknown socket data type: ${rawData.runtimeType}');
+        if (kDebugMode) {
+          print('Unknown socket data type: ${rawData.runtimeType}');
+        }
         return;
       }
 
@@ -73,14 +101,18 @@ class HomeController extends GetxController {
       _eventData.value = dataList;
       update();
     } catch (e) {
-      print('Error processing socket data: $e');
-      print('Received raw data: $rawData');
+      if (kDebugMode) {
+        print('Error processing socket data: $e');
+        print('Received raw data: $rawData');
+      }
     }
   }
 
   void reconnectSocket() {
     if (!isConnected.value) {
-      print('HomeController: Attempting to reconnect socket...');
+      if (kDebugMode) {
+        print('HomeController: Attempting to reconnect socket...');
+      }
       _apiService.socket.connect();
     }
   }
@@ -89,13 +121,15 @@ class HomeController extends GetxController {
     _apiService.socket.disconnect();
   }
 
-  void sendTombolAkuariumState({int tombol1State = 0, int tombol2State = 0}) {
+  void sendTombolAkuariumState({int tombolState = 0, String typeState = ''}) {
     if (isConnected.value) {
       final dataMap = {
-        "tombol1": tombol1State,
-        "tombol2": tombol2State,
+        "tombol": tombolState,
+        "type": typeState,
       };
-      print('HomeController: Emitting "tombol-akuarium" with data: $dataMap');
+      if (kDebugMode) {
+        print('HomeController: Emitting "tombol-akuarium" with data: $dataMap');
+      }
       _apiService.socket.emit('tombol-akuarium', dataMap);
 
       Get.snackbar(
@@ -106,7 +140,9 @@ class HomeController extends GetxController {
         colorText: Colors.white,
       );
     } else {
-      print('HomeController: Cannot emit. Socket is not connected.');
+      if (kDebugMode) {
+        print('HomeController: Cannot emit. Socket is not connected.');
+      }
       Get.snackbar(
         "Koneksi Gagal",
         "Tidak bisa mengirim data, socket tidak terhubung.",
@@ -119,8 +155,22 @@ class HomeController extends GetxController {
 
   @override
   void onClose() {
-    print('HomeController: Closing connection.');
+    if (kDebugMode) {
+      print('HomeController: Closing connection.');
+    }
     disconnectSocket();
     super.onClose();
+  }
+
+  void setIsiAir(bool newValue) {
+    _isiAirActive.value = newValue;
+    sendTombolAkuariumState(
+        tombolState: isiAirActive ? 1 : 0, typeState: 'isi');
+  }
+
+  void setKurasAir(bool newValue) {
+    _kurasAirActive.value = newValue;
+    sendTombolAkuariumState(
+        tombolState: kurasAirActive ? 1 : 0, typeState: 'kuras');
   }
 }
