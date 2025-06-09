@@ -439,7 +439,7 @@ class _AnimatedStatusCardState extends State<AnimatedStatusCard>
     super.dispose();
   }
 
-  String _formatNumber(dynamic value) {
+  String _formatNumber({dynamic value, int digit = 2}) {
     if (value == null) return 'N/A';
     final double? doubleVal = double.tryParse(value.toString());
     if (doubleVal == null) return value.toString();
@@ -447,7 +447,7 @@ class _AnimatedStatusCardState extends State<AnimatedStatusCard>
     if (doubleVal == doubleVal.truncateToDouble()) {
       return doubleVal.toStringAsFixed(0);
     } else {
-      String formatted = doubleVal.toStringAsFixed(2);
+      String formatted = doubleVal.toStringAsFixed(digit);
       if (formatted.endsWith('.00')) {
         return doubleVal.toStringAsFixed(0);
       } else if (formatted.endsWith('0')) {
@@ -520,7 +520,17 @@ class _AnimatedStatusCardState extends State<AnimatedStatusCard>
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
-                        Text(_formatNumber(widget.data.nilai),
+                        Text(
+                            // widget.label.toLowerCase() == 'amonia (ppm)'
+                            //     ? (widget.data.nilai ?? 0).toString()
+                            //     : _formatNumber(widget.data.nilai),
+                            _formatNumber(
+                              value: widget.data.nilai,
+                              digit:
+                                  widget.label.toLowerCase() == 'amonia (ppm)'
+                                      ? 4
+                                      : 2,
+                            ),
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
